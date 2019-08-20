@@ -84,6 +84,7 @@ class CPU:
         """Run the CPU."""
 
         running = True
+        calling = False
         sp = 0b11110100
 
         while running:
@@ -108,12 +109,17 @@ class CPU:
             print(self.reg[operand_a])
             self.pc += 2
           
+          # ADD
+          elif IR == 0b10100000:
+            self.alu("ADD", operand_a, operand_b)
+            self.pc += 3
+
           # MUL
           elif IR == 0b10100010:
             self.alu("MUL", operand_a, operand_b)
             self.pc += 3
 
-          #PUSH
+          # PUSH
           elif IR == 0b01000101:
             # print(f"PUSH self.ram[sp]: {self.ram[sp]}")
             # print(f"register at {operand_a}: {self.reg[operand_a]}")
@@ -121,10 +127,21 @@ class CPU:
             sp -= 1
             self.pc += 2
           
-          #POP
+          # POP
           elif IR == 0b01000110:
             sp += 1
             # print(f"POP self.ram[sp]: {self.ram[sp]}")
             # print(f"register at {operand_a}: {self.reg[operand_a]}")
             self.reg[operand_a] = self.ram[sp]
             self.pc += 2
+
+          # CALL
+          elif IR == 0b01010000:
+            self.ram[sp] = self.pc + 2
+            self.pc = self.reg[operand_a]
+            sp -= 1
+
+          # RET
+          elif IR == 0b00010001:
+            sp += 1
+            self.pc = self.ram[sp]
