@@ -37,22 +37,17 @@ class CPU:
 
         address = 0
 
-        # For now, we've just hardcoded a program:
+        # If no command line argument was provided, exit
+        if len(sys.argv) < 2:
+          return
 
-        program = [
-            # From print8.ls8
-            0b10000010, # LDI R0,8
-            0b00000000,
-            0b00001000,
-            0b01000111, # PRN R0
-            0b00000000,
-            0b00000001, # HLT
-        ]
+        name_of_file_to_load = sys.argv[1]
+        program_file = open(name_of_file_to_load)
 
-        for instruction in program:
-            self.ram[address] = instruction
+        for line in program_file:
+          if len(line) > 0 and line[0] is not "#":
+            self.ram[address] = int(line[0:8], 2)
             address += 1
-
 
     def alu(self, op, reg_a, reg_b):
         """ALU operations."""
@@ -60,6 +55,8 @@ class CPU:
         if op == "ADD":
             self.reg[reg_a] += self.reg[reg_b]
         #elif op == "SUB": etc
+        elif op == "MUL":
+          self.reg[reg_a] *= self.reg[reg_b]
         else:
             raise Exception("Unsupported ALU operation")
 
@@ -87,6 +84,7 @@ class CPU:
         """Run the CPU."""
 
         running = True
+        sp = 0b11110100
 
         while running:
 
@@ -108,4 +106,25 @@ class CPU:
           #PRN
           elif IR == 0b01000111:
             print(self.reg[operand_a])
+            self.pc += 2
+          
+          # MUL
+          elif IR == 0b10100010:
+            self.alu("MUL", operand_a, operand_b)
+            self.pc += 3
+
+          #PUSH
+          elif IR == 0b01000101:
+            # print(f"PUSH self.ram[sp]: {self.ram[sp]}")
+            # print(f"register at {operand_a}: {self.reg[operand_a]}")
+            self.ram[sp] = self.reg[operand_a]
+            sp -= 1
+            self.pc += 2
+          
+          #POP
+          elif IR == 0b01000110:
+            sp += 1
+            # print(f"POP self.ram[sp]: {self.ram[sp]}")
+            # print(f"register at {operand_a}: {self.reg[operand_a]}")
+            self.reg[operand_a] = self.ram[sp]
             self.pc += 2
