@@ -84,7 +84,6 @@ class CPU:
         """Run the CPU."""
 
         running = True
-        calling = False
         sp = 0b11110100
 
         while running:
