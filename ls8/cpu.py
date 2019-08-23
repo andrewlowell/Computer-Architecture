@@ -52,8 +52,16 @@ class CPU:
     def alu(self, op, reg_a, reg_b):
         """ALU operations."""
 
-        if op == "ADD":
-            self.reg[reg_a] += self.reg[reg_b]
+        if op == "CMP":
+          if self.reg[reg_a] == self.reg[reg_b]:
+            self.fl = self.fl | 0b00000001
+          elif self.reg[reg_a] > self.reg[reg_b]:
+            self.fl = self.fl | 0b00000010
+          else:
+            self.fl = self.fl | 0b00000100
+
+        elif op == "ADD":
+          self.reg[reg_a] += self.reg[reg_b]
         #elif op == "SUB": etc
         elif op == "MUL":
           self.reg[reg_a] *= self.reg[reg_b]
@@ -88,7 +96,7 @@ class CPU:
 
         while running:
 
-          self.trace()
+          # self.trace()
 
           IR = self.ram_read(self.pc)
           operand_a = self.ram_read(self.pc + 1)
@@ -108,6 +116,12 @@ class CPU:
             print(self.reg[operand_a])
             self.pc += 2
           
+          # CMP
+
+          elif IR == 0b10100111:
+            self.alu("CMP", operand_a, operand_b)
+            self.pc += 3
+
           # ADD
           elif IR == 0b10100000:
             self.alu("ADD", operand_a, operand_b)
@@ -120,8 +134,6 @@ class CPU:
 
           # PUSH
           elif IR == 0b01000101:
-            # print(f"PUSH self.ram[sp]: {self.ram[sp]}")
-            # print(f"register at {operand_a}: {self.reg[operand_a]}")
             self.ram[sp] = self.reg[operand_a]
             sp -= 1
             self.pc += 2
@@ -129,10 +141,26 @@ class CPU:
           # POP
           elif IR == 0b01000110:
             sp += 1
-            # print(f"POP self.ram[sp]: {self.ram[sp]}")
-            # print(f"register at {operand_a}: {self.reg[operand_a]}")
             self.reg[operand_a] = self.ram[sp]
             self.pc += 2
+
+          # JMP
+          elif IR == 0b01010100:
+            self.pc = self.reg[operand_a]
+
+          # JEQ
+          elif IR == 0b01010101:
+            if bin(self.fl)[-1] == '1':
+              self.pc = self.reg[operand_a]
+            else:
+              self.pc += 2
+
+          # JNE
+          elif IR == 0b01010110:
+            if bin(self.fl)[-1] == '0':
+              self.pc = self.reg[operand_a]
+            else:
+              self.pc += 2
 
           # CALL
           elif IR == 0b01010000:
